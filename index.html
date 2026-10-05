@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarkForge — Free Online Markdown Editor with Live Preview &amp; Linter</title>
+<meta name="description" content="MarkForge is a free online markdown editor with instant markdown preview online, a built-in Markdown linter, YAML frontmatter panel, outline sidebar and one-click themed HTML export. A fast markdown to html converter that runs 100% in your browser.">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { forge:'#0d1526', forgecard:'#131e35', forgeedge:'#233252', primary:'#4ade80', accentx:'#60a5fa' },
+    fontFamily: { disp:['Inter','ui-sans-serif','system-ui','sans-serif'], mono:['"JetBrains Mono"','ui-monospace','monospace'] }
+  }}
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { background:#0d1526; color:#e2e8f0; font-family:'Inter',ui-sans-serif,system-ui,sans-serif; }
+  .pane { background:#131e35; border:1px solid #233252; border-radius:1rem; overflow:hidden; }
+  .pane-bar { background:#0f1930; border-bottom:1px solid #233252; }
+  .dot { width:.65rem; height:.65rem; border-radius:9999px; display:inline-block; }
+  #md-input { background:#0a1222; caret-color:#4ade80; }
+  #md-input:focus { outline:2px solid rgba(74,222,128,.5); outline-offset:-2px; }
+  .mf-preview { color:#dbe4f3; line-height:1.75; font-size:.95rem; }
+  .mf-preview h1,.mf-preview h2,.mf-preview h3,.mf-preview h4 { color:#f1f5f9; font-weight:700; line-height:1.3; margin:1.1em 0 .5em; scroll-margin-top:90px; }
+  .mf-preview h1 { font-size:1.7rem; border-bottom:2px solid #4ade80; padding-bottom:.35rem; }
+  .mf-preview h2 { font-size:1.4rem; color:#4ade80; }
+  .mf-preview h3 { font-size:1.2rem; color:#93c5fd; }
+  .mf-preview h4 { font-size:1.05rem; color:#cbd5e1; }
+  .mf-preview p { margin:.7em 0; }
+  .mf-preview a { color:#60a5fa; text-decoration:underline; }
+  .mf-preview code { background:#0a1120; border:1px solid #233252; color:#4ade80; padding:.12em .4em; border-radius:.35rem; font-size:.85em; font-family:'JetBrains Mono',monospace; }
+  .mf-preview pre { background:#0a1120; border:1px solid #233252; padding:1rem; border-radius:.6rem; overflow-x:auto; margin:1em 0; }
+  .mf-preview pre code { background:none; border:none; padding:0; color:#a7f3d0; }
+  .mf-preview blockquote { border-left:4px solid #60a5fa; background:#16213d; margin:1em 0; padding:.6em 1em; border-radius:0 .6rem .6rem 0; color:#bfdbfe; }
+  .mf-preview ul,.mf-preview ol { padding-left:1.5rem; margin:.7em 0; }
+  .mf-preview li { margin:.3em 0; }
+  .mf-preview ul { list-style:disc; } .mf-preview ol { list-style:decimal; }
+  .mf-preview img { max-width:100%; border-radius:.6rem; border:1px solid #233252; }
+  .mf-preview hr { border:none; border-top:1px solid #233252; margin:1.6em 0; }
+  .mf-preview del { color:#94a3b8; }
+  .lint-err { border-left:3px solid #f87171; } .lint-warn { border-left:3px solid #fbbf24; } .lint-info { border-left:3px solid #60a5fa; }
+  .outline-link:hover { color:#4ade80; }
+  details.faq summary { cursor:pointer; list-style:none; }
+  details.faq summary::-webkit-details-marker { display:none; }
+  details.faq[open] .faq-plus { transform:rotate(45deg); }
+  .faq-plus { transition:transform .2s ease; }
+  .btn { display:inline-flex; align-items:center; gap:.45rem; font-size:.8rem; font-weight:600; padding:.5rem .9rem; border-radius:.6rem; border:1px solid #233252; background:#16213d; color:#dbe4f3; transition:all .15s ease; }
+  .btn:hover { border-color:#4ade80; color:#4ade80; }
+  .btn-primary { background:#4ade80; border-color:#4ade80; color:#0d1526; }
+  .btn-primary:hover { background:#86efac; color:#0d1526; }
+  .btn-accent { background:#60a5fa; border-color:#60a5fa; color:#0d1526; }
+  .btn-accent:hover { background:#93c5fd; color:#0d1526; }
+  select#export-theme { background:#0a1222; border:1px solid #233252; border-radius:.6rem; font-size:.8rem; padding:.5rem .6rem; color:#dbe4f3; }
+  input, select, textarea { color-scheme: dark; }
+  .glow-text { text-shadow:0 0 28px rgba(74,222,128,.35); }
+  #seo-article h2 { color:#f1f5f9; font-size:1.5rem; font-weight:700; margin:2.2em 0 .7em; }
+  #seo-article h3 { color:#4ade80; font-size:1.2rem; font-weight:600; margin:1.6em 0 .5em; }
+  #seo-article p { color:#c3cede; margin:.9em 0; line-height:1.8; }
+  #seo-article ul, #seo-article ol { color:#c3cede; margin:.9em 0; padding-left:1.5rem; line-height:1.8; }
+  #seo-article ul { list-style:disc; } #seo-article ol { list-style:decimal; }
+  #seo-article li { margin:.35em 0; }
+  #seo-article code { background:#0a1120; border:1px solid #233252; color:#4ade80; padding:.1em .35em; border-radius:.3rem; font-size:.85em; }
+  #seo-article pre { background:#0a1120; border:1px solid #233252; padding:1rem; border-radius:.6rem; overflow-x:auto; margin:1em 0; font-size:.85rem; }
+  #seo-article strong { color:#f1f5f9; }
+  @media print { .no-print { display:none !important; } }
+</style>
+</head>
+<body id="top" class="min-h-screen">
+
+<!-- ================= HEADER ================= -->
+<header class="sticky top-0 z-50 border-b border-forgeedge/70 no-print" style="background:rgba(13,21,38,.94);backdrop-filter:blur(10px)">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2.5">
+      <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl" style="background:linear-gradient(135deg,#4ade80,#60a5fa)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d1526" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17V7l4 4 4-4"/><path d="M12 17v-2"/><path d="M17 7l4 10"/><path d="M21 7l-4 10"/></svg>
+      </span>
+      <span class="font-disp text-xl font-extrabold tracking-tight">Mark<span style="color:#4ade80">Forge</span></span>
+    </a>
+    <nav class="flex items-center gap-5 text-sm">
+      <a href="#top" class="text-slate-300 hover:text-primary transition">Home</a>
+      <a href="https://fixoraa.tech" class="text-slate-300 hover:text-primary transition">More Tools</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="mx-auto max-w-6xl px-4 sm:px-6 pt-10 pb-2">
+  <div class="flex flex-wrap items-center gap-3 mb-4">
+    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style="background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.35)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      Unlimited Free Usage
+    </span>
+    <span class="text-xs text-slate-500">No signup · No paywall · 100% in your browser</span>
+  </div>
+  <h1 class="font-disp text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight glow-text">
+    Online Markdown Editor <span style="background:linear-gradient(90deg,#4ade80,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent">with Live Preview</span>
+  </h1>
+  <p class="mt-3 max-w-2xl text-slate-400 text-sm sm:text-base">
+    MarkForge is a free <em class="not-italic text-slate-200">markdown preview online</em> studio: type Markdown on the left,
+    watch it render instantly on the right. A built-in linter catches heading jumps, missing image alt text, broken
+    anchor links and duplicate headings — then export your work as a themed standalone HTML page.
+  </p>
+</section>
+
+<!-- TOP AD (verbatim) -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TOOL ================= -->
+<section id="tool" class="mx-auto max-w-6xl px-4 sm:px-6 py-6 no-print">
+
+  <!-- Toolbar -->
+  <div class="pane p-3 flex flex-wrap items-center gap-2">
+    <button id="sample-btn" class="btn" title="Load a demo document">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+      Load sample
+    </button>
+    <button id="clear-btn" class="btn" title="Clear the editor">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      Clear
+    </button>
+    <button id="paste-html-btn" class="btn" title="Convert HTML from your clipboard into Markdown">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      Paste HTML → MD
+    </button>
+    <span class="hidden sm:inline-block w-px h-6 bg-forgeedge mx-1"></span>
+    <button id="copy-html-btn" class="btn btn-accent" title="Copy the rendered HTML">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy HTML
+    </button>
+    <button id="download-md-btn" class="btn" title="Download your Markdown as a .md file">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+      Download .md
+    </button>
+    <div class="flex items-center gap-2 ml-auto">
+      <select id="export-theme" title="Export theme">
+        <option value="midnight">Midnight theme</option>
+        <option value="paper">Paper theme</option>
+        <option value="ocean">Ocean theme</option>
+      </select>
+      <button id="export-btn" class="btn btn-primary" title="Export a themed standalone HTML page">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+        Export HTML
+      </button>
+    </div>
+  </div>
+  <p id="paste-hint" class="hidden mt-2 text-xs text-amber-300/90"></p>
+
+  <!-- Panes -->
+  <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_290px]">
+
+    <!-- Editor pane -->
+    <div class="pane flex flex-col">
+      <div class="pane-bar px-4 py-2.5 flex items-center gap-2">
+        <span class="dot" style="background:#f87171"></span>
+        <span class="dot" style="background:#fbbf24"></span>
+        <span class="dot" style="background:#4ade80"></span>
+        <span class="ml-2 font-mono text-xs text-slate-400">editor.md</span>
+        <span class="ml-auto text-[10px] uppercase tracking-widest text-slate-500">Markdown input</span>
+      </div>
+      <textarea id="md-input" spellcheck="false" placeholder="# Start typing Markdown here…
+
+- Live preview updates as you type
+- The linter watches the sidebar on the right"
+        class="w-full flex-1 min-h-[440px] lg:min-h-[520px] p-4 font-mono text-[13px] leading-6 text-slate-200 resize-y"></textarea>
+    </div>
+
+    <!-- Preview pane -->
+    <div class="pane flex flex-col">
+      <div class="pane-bar px-4 py-2.5 flex items-center gap-2">
+        <span class="dot" style="background:#f87171"></span>
+        <span class="dot" style="background:#fbbf24"></span>
+        <span class="dot" style="background:#60a5fa"></span>
+        <span class="ml-2 font-mono text-xs text-slate-400">preview</span>
+        <span class="ml-auto inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> Live
+        </span>
+      </div>
+      <div id="md-preview" class="mf-preview flex-1 min-h-[440px] lg:min-h-[520px] max-h-[640px] overflow-y-auto p-5"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="flex flex-col gap-4">
+      <div class="pane">
+        <div class="pane-bar px-4 py-2.5 flex items-center justify-between">
+          <span class="font-mono text-xs text-slate-400">outline</span>
+          <span id="outline-count" class="text-[10px] text-slate-500">0</span>
+        </div>
+        <div id="outline-list" class="p-3 max-h-56 overflow-y-auto text-sm space-y-1"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-bar px-4 py-2.5 flex items-center justify-between">
+          <span class="font-mono text-xs text-slate-400">linter</span>
+          <span id="issues-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.35)">0 issues</span>
+        </div>
+        <div id="lint-list" class="p-3 max-h-56 overflow-y-auto text-sm space-y-2"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-bar px-4 py-2.5">
+          <span class="font-mono text-xs text-slate-400">frontmatter</span>
+        </div>
+        <div id="frontmatter-panel" class="p-3 max-h-56 overflow-y-auto text-sm"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Stats -->
+  <div class="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-3">
+    <div class="pane p-3 text-center"><div id="stat-words" class="font-disp text-2xl font-bold text-primary">0</div><div class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Words</div></div>
+    <div class="pane p-3 text-center"><div id="stat-chars" class="font-disp text-2xl font-bold text-accentx">0</div><div class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Characters</div></div>
+    <div class="pane p-3 text-center"><div id="stat-reading-time" class="font-disp text-2xl font-bold text-primary">0 min</div><div class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Reading time</div></div>
+    <div class="pane p-3 text-center"><div id="stat-headings" class="font-disp text-2xl font-bold text-accentx">0</div><div class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Headings</div></div>
+    <div class="pane p-3 text-center col-span-2 sm:col-span-1"><div id="stat-issues" class="font-disp text-2xl font-bold text-primary">0</div><div class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Lint issues</div></div>
+  </div>
+</section>
+
+<!-- BOTTOM AD (verbatim) -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="464498"></script>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SEO ARTICLE ================= -->
+<main class="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+<article id="seo-article" class="max-w-3xl">
+  <h2>The Complete Guide to Writing in Markdown Online</h2>
+  <p>Markdown has quietly become the universal language of writing on the web. Developers use it for README files and documentation, bloggers use it for posts, students use it for notes, and entire knowledge bases run on it. The reason is simple: Markdown lets you format text with a handful of intuitive symbols instead of wrestling with buttons, menus, and proprietary file formats. A document written in Markdown is plain text, which means it will open on any device, in any decade, without special software. And when you need a polished result, a <strong>markdown to html converter</strong> turns that plain text into a beautiful web page in a fraction of a second.</p>
+  <p>That is exactly what MarkForge does. It is a free <strong>online markdown editor</strong> that combines a distraction-free writing pane with an instant live preview, a built-in linter that catches structural mistakes as you type, a YAML frontmatter panel for metadata, a clickable document outline, and one-click export to a themed standalone HTML page. Everything runs inside your browser — there is no account to create, no file to upload, and no subscription to manage.</p>
+
+  <h2>Why Markdown still wins in 2026</h2>
+  <p>Every few years someone predicts that Markdown will be replaced by a shinier visual editor. It never happens, because Markdown solves a problem that visual editors cannot: it separates <em>what you mean</em> from <em>how it looks</em>. When you write <code>**important**</code>, you are declaring emphasis, not choosing a font weight. The same source can be rendered as a web page, a PDF, a slide deck, or an ebook without rewriting a single word.</p>
+  <p>Plain text is also future-proof. Word processor formats change, cloud services shut down, but a <code>.md</code> file from 2006 opens perfectly today and will open perfectly in 2046. Version control systems like Git can track every change line by line, which is why nearly every open-source project documents itself in Markdown. Writers benefit too: your words are never locked inside a proprietary format, and you can switch tools whenever you like without a painful migration.</p>
+  <p>Finally, Markdown is fast. There is no mouse travel, no ribbon to hunt through. Headings, lists, links, and code blocks flow from your keyboard at the speed of thought. Once the syntax becomes muscle memory — and it takes about an hour — most people write noticeably faster than they do in a traditional word processor.</p>
+
+  <h2>What an online markdown editor gives you</h2>
+  <p>A desktop Markdown app is fine until you switch machines. An <strong>online markdown editor</strong> lives in your browser, so your writing environment follows you from laptop to library computer to tablet. There is nothing to install, nothing to update, and nothing to sync — you open a tab and start writing.</p>
+  <p>MarkForge takes that convenience further with a studio layout designed for serious documents:</p>
+  <ul>
+    <li><strong>Split panes:</strong> editor on the left, live preview on the right, so you never have to guess what your formatting will look like.</li>
+    <li><strong>Built-in linter:</strong> catches heading-level jumps, missing image alt text, broken anchor links, and duplicate headings while you write.</li>
+    <li><strong>YAML frontmatter panel:</strong> parses the metadata block at the top of your document and displays it as a clean key-value table.</li>
+    <li><strong>Outline sidebar:</strong> every heading becomes a clickable entry, so long documents stay navigable.</li>
+    <li><strong>Reading time and word count:</strong> live stats that help bloggers hit length targets and readers know what to expect.</li>
+    <li><strong>Themed HTML export:</strong> download a complete, self-contained web page in Midnight, Paper, or Ocean styling.</li>
+    <li><strong>HTML to Markdown paste conversion:</strong> copy content from any web page and paste it as clean Markdown.</li>
+  </ul>
+
+  <h2>Markdown syntax crash course</h2>
+  <p>If you are new to Markdown, here is the core syntax. MarkForge renders every one of these live, so the fastest way to learn is to type them into the editor above and watch the preview pane.</p>
+  <h3>Headings</h3>
+  <p>Use one to six hash symbols. One hash is the biggest heading, six is the smallest. Keep your heading levels in order — jumping from <code>#</code> straight to <code>###</code> confuses both readers and search engines, which is why MarkForge's linter flags it.</p>
+  <h3>Emphasis</h3>
+  <p>Wrap text in double asterisks for <strong>bold</strong> and single asterisks or underscores for <em>italic</em>. Tildes create <del>strikethrough</del>, and backticks mark <code>inline code</code>.</p>
+  <h3>Links and images</h3>
+  <p>Links look like <code>[visible text](https://example.com)</code>. Images add an exclamation mark in front: <code>![alt text](image.png)</code>. That alt text matters — it is what screen readers announce and what search engines index, so the linter warns you whenever an image lacks it.</p>
+  <h3>Lists</h3>
+  <p>Start lines with a dash, asterisk, or plus for bullet lists, and with numbers for ordered lists. MarkForge also supports task lists with <code>- [ ]</code> for open items and <code>- [x]</code> for completed ones — handy for checklists and project plans.</p>
+  <h3>Code blocks and quotes</h3>
+  <p>Triple backticks fence off multi-line code blocks, optionally with a language name for highlighting, like <code>```js</code>. A greater-than sign creates a blockquote, perfect for quotations and callouts. Three dashes on their own line draw a horizontal rule.</p>
+
+  <h2>Why a live markdown preview online beats blind typing</h2>
+  <p>Writing Markdown without a preview is like cooking without tasting. You <em>think</em> the list nested correctly, you <em>hope</em> the link syntax is right, but you only find out when you render the document somewhere else — often after you have already published it.</p>
+  <p>A <strong>markdown preview online</strong> closes that loop instantly. Every keystroke re-renders the preview pane, so a broken link or a misaligned heading is visible the moment it happens. This is especially valuable for long documents: you can scroll the preview to check the overall structure, click outline entries to jump between sections, and verify that code blocks, quotes, and images all look the way you intended.</p>
+  <p>There is a learning benefit too. Beginners often struggle to connect Markdown syntax with its output. Watching <code>## Heading</code> transform into a styled heading in real time builds that mental model far faster than reading a cheat sheet. MarkForge's sample document is designed for exactly this — load it, tweak the source, and observe the preview respond.</p>
+
+  <h2>From Markdown to HTML: the converter workflow</h2>
+  <p>At some point every Markdown document needs to become something else — usually HTML. A <strong>markdown to html converter</strong> parses your plain-text source and emits the corresponding tags: <code># Title</code> becomes <code>&lt;h1&gt;</code>, <code>**bold**</code> becomes <code>&lt;strong&gt;</code>, lists become <code>&lt;ul&gt;</code> and <code>&lt;ol&gt;</code>, and so on.</p>
+  <p>MarkForge gives you two ways to make that conversion. The <strong>Copy HTML</strong> button places the rendered markup on your clipboard, ready to paste into a CMS, an email template, or an existing web page. The <strong>Export HTML</strong> button goes further: it wraps your content in a complete standalone document with embedded CSS in one of three themes, so the file looks polished the moment you open it — no build step, no stylesheet to attach, no dependencies to download.</p>
+  <p>This workflow is ideal for several real-world jobs. Bloggers draft posts in Markdown and export HTML for platforms that accept raw markup. Developers generate documentation pages they can host anywhere. Students turn study notes into printable pages. Because the export is a single self-contained file, you can email it, archive it, or publish it on any static host without worrying about broken asset links.</p>
+
+  <h2>The built-in linter: a proofreader for document structure</h2>
+  <p>Spell checkers catch typos; almost nothing catches <em>structural</em> mistakes. Yet structural mistakes are the ones that hurt most: a skipped heading level breaks screen-reader navigation, a missing image description locks out visually impaired readers, a dead anchor link frustrates everyone, and duplicate headings confuse both readers and search engines.</p>
+  <p>MarkForge's linter watches for four specific problems as you type:</p>
+  <ol>
+    <li><strong>Heading-level jumps.</strong> Going from <code>#</code> directly to <code>###</code> skips a level. Assistive technologies use heading levels to build a page outline, so skipped levels create a broken map. The linter flags the exact line and tells you which levels were skipped.</li>
+    <li><strong>Missing image alt text.</strong> Every <code>![](image.png)</code> without a description triggers a warning. Alt text is not optional decoration — it is a core accessibility and SEO requirement.</li>
+    <li><strong>Broken anchor links.</strong> If you link to <code>#some-section</code> but no heading generates that anchor, the linter marks it as an error. It resolves anchors exactly the way the preview does, so what you see is what gets checked.</li>
+    <li><strong>Duplicate headings.</strong> Two sections with the same title make navigation ambiguous and dilute SEO. The linter points at the repeat and tells you where the first occurrence lives.</li>
+  </ol>
+  <p>It also notes when a document contains more than one top-level <code>#</code> heading — usually a sign that two documents got merged. Issues are color-coded by severity and show line numbers, so fixing them feels less like debugging and more like following a tidy checklist.</p>
+
+  <h2>YAML frontmatter: metadata for serious documents</h2>
+  <p>Many Markdown workflows need data <em>about</em> the document: its title, author, publication date, tags, or description. YAML frontmatter is the standard solution — a block of <code>key: value</code> pairs between two lines of three dashes at the very top of the file. Static site generators like Jekyll, Hugo, and Astro read this block to build pages, and many CMS importers understand it too.</p>
+  <p>MarkForge parses your frontmatter automatically and shows it in a dedicated panel: strings, quoted values, and simple lists like <code>tags: [markdown, tutorial]</code> are all displayed as a clean table. If there is no frontmatter block, the panel tells you how to add one. Keeping metadata visible while you write prevents the classic mistake of publishing a post with an empty title or missing tags.</p>
+
+  <h2>Writing documents people actually finish</h2>
+  <p>Tools only go so far — structure is what keeps readers engaged. A few habits make any Markdown document dramatically more readable. First, give every document exactly one <code>#</code> title that promises something specific. Second, keep sections short: if a section runs longer than a few hundred words, it probably wants subheadings. Third, prefer lists over paragraphs when you are enumerating anything — the eye scans a list in seconds and a paragraph in minutes.</p>
+  <p>Fourth, link generously but purposefully. Every link should earn its place; a wall of blue text is as tiring as a wall of gray text. Fifth, use code formatting for anything the reader might type or click — file names, commands, button labels, URLs. It creates a visual rhythm that guides the eye to the actionable parts. Finally, check your reading time. MarkForge shows it live: most online readers prefer articles in the three-to-eight-minute range, so if your draft clocks in at twenty minutes, consider splitting it.</p>
+
+  <h2>Exporting, publishing, and going further</h2>
+  <p>When your document is done, MarkForge offers a clean exit ramp. Download the <code>.md</code> source for archiving or version control, copy the HTML for pasting into other systems, or export a themed page for direct publishing. The Midnight theme suits technical documentation, Paper suits articles you want to print, and Ocean suits portfolios and creative writing.</p>
+  <p>For team workflows, the exported HTML is a convenient review artifact: send one file, and anyone can open it in a browser with no special software. For personal workflows, pair MarkForge with a Git repository — write in the editor, download the <code>.md</code>, commit it — and you have a full versioned writing system with zero cost.</p>
+  <p>And if your source material starts life as a web page rather than plain text, the HTML-to-Markdown conversion runs in reverse. Copy an article from your browser, hit <strong>Paste HTML → MD</strong> (or just paste directly into the editor), and MarkForge converts headings, lists, links, bold and italic text, blockquotes, and code blocks back into clean Markdown you can edit freely.</p>
+
+  <h2>MarkForge vs. desktop editors and plain converters</h2>
+  <p>Desktop Markdown editors are powerful, but they ask for installation, updates, and often payment for the features that matter. Single-purpose converter websites turn Markdown into HTML but give you no writing environment, no linting, and no outline. Note-taking apps lock your words into their ecosystem.</p>
+  <p>MarkForge sits in the productive middle: a genuine writing studio with professional guardrails, available in any browser tab, free without limits. Your documents never touch a server, so there is no privacy trade-off for the convenience. Whether you are drafting a README, writing a blog post, preparing documentation, or just learning Markdown for the first time, the combination of live preview, structural linting, frontmatter awareness, and one-click export covers the entire journey from first keystroke to published page.</p>
+
+  <h2>Start writing</h2>
+  <p>Scroll back up to the editor, load the sample document, and try breaking things on purpose — skip a heading level, delete an image's alt text, link to a nonexistent anchor. Watch the linter catch each one, fix them, and export the result as a themed HTML page. That loop — write, preview, lint, export — is the whole philosophy of MarkForge: professional-quality documents with none of the friction. Your words stay yours, your workflow stays fast, and your published pages look like you hired a designer. Happy writing.</p>
+</article>
+
+<!-- ================= FAQs ================= -->
+<section class="max-w-3xl mt-12">
+  <h2 class="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
+  <div class="space-y-3">
+    <details class="faq pane p-4">
+      <summary class="flex items-center justify-between font-semibold text-slate-100">Is MarkForge really free to use?<span class="faq-plus text-primary text-xl leading-none">+</span></summary>
+      <p class="mt-3 text-sm text-slate-400 leading-relaxed">Yes. MarkForge offers Unlimited Free Usage with no signup, no paywall, and no watermarks. Every feature — the live preview, the Markdown linter, frontmatter parsing, the outline sidebar, HTML-to-Markdown conversion, and themed HTML export — is available to everyone, in every session, without creating an account.</p>
+    </details>
+    <details class="faq pane p-4">
+      <summary class="flex items-center justify-between font-semibold text-slate-100">Does my document ever leave my browser?<span class="faq-plus text-primary text-xl leading-none">+</span></summary>
+      <p class="mt-3 text-sm text-slate-400 leading-relaxed">No. MarkForge runs entirely on your device. Your Markdown is parsed, linted, and rendered by JavaScript in the page itself — nothing is uploaded to a server, stored in a database, or sent over the network. You can even disconnect from the internet after the page loads and keep writing.</p>
+    </details>
+    <details class="faq pane p-4">
+      <summary class="flex items-center justify-between font-semibold text-slate-100">What exactly does the built-in Markdown linter check?<span class="faq-plus text-primary text-xl leading-none">+</span></summary>
+      <p class="mt-3 text-sm text-slate-400 leading-relaxed">The linter checks four structural issues in real time: heading-level jumps (for example going from H1 straight to H3), images missing alt text, anchor links like #section-name that point to no existing heading, and duplicate headings. It also notes when a document has more than one H1. Each issue shows its line number and severity so you can fix problems as you write.</p>
+    </details>
+    <details class="faq pane p-4">
+      <summary class="flex items-center justify-between font-semibold text-slate-100">How do I convert my Markdown to HTML?<span class="faq-plus text-primary text-xl leading-none">+</span></summary>
+      <p class="mt-3 text-sm text-slate-400 leading-relaxed">Two ways. Click "Copy HTML" to place the rendered markup on your clipboard for pasting into a CMS, email, or existing page. Or choose a theme and click "Export HTML" to download a complete standalone web page with embedded styling — Midnight, Paper, or Ocean — that you can open, share, or publish anywhere with no extra setup.</p>
+    </details>
+    <details class="faq pane p-4">
+      <summary class="flex items-center justify-between font-semibold text-slate-100">Can I paste HTML and get Markdown back?<span class="faq-plus text-primary text-xl leading-none">+</span></summary>
+      <p class="mt-3 text-sm text-slate-400 leading-relaxed">Yes. Click "Paste HTML → MD" to convert HTML from your clipboard into clean Markdown, or simply paste copied web content directly into the editor — MarkForge detects HTML on the clipboard and converts headings, lists, links, bold and italic text, images, blockquotes, and code blocks automatically.</p>
+    </details>
+    <details class="faq pane p-4">
+      <summary class="flex items-center justify-between font-semibold text-slate-100">What is YAML frontmatter and how does MarkForge handle it?<span class="faq-plus text-primary text-xl leading-none">+</span></summary>
+      <p class="mt-3 text-sm text-slate-400 leading-relaxed">YAML frontmatter is a metadata block at the top of a Markdown file, wrapped in lines of three dashes, containing key-value pairs like title, author, date, and tags. Static site generators and CMS importers read it to build pages. MarkForge parses the block automatically, displays it as a readable table in the frontmatter panel, and excludes it from the rendered preview and word count.</p>
+    </details>
+  </div>
+</section>
+</main>
+
+<!-- ================= JSON-LD ================= -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is MarkForge really free to use?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. MarkForge offers Unlimited Free Usage with no signup, no paywall, and no watermarks. Every feature — the live preview, the Markdown linter, frontmatter parsing, the outline sidebar, HTML-to-Markdown conversion, and themed HTML export — is available to everyone, in every session, without creating an account." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does my document ever leave my browser?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. MarkForge runs entirely on your device. Your Markdown is parsed, linted, and rendered by JavaScript in the page itself — nothing is uploaded to a server, stored in a database, or sent over the network. You can even disconnect from the internet after the page loads and keep writing." }
+    },
+    {
+      "@type": "Question",
+      "name": "What exactly does the built-in Markdown linter check?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The linter checks four structural issues in real time: heading-level jumps (for example going from H1 straight to H3), images missing alt text, anchor links like #section-name that point to no existing heading, and duplicate headings. It also notes when a document has more than one H1. Each issue shows its line number and severity so you can fix problems as you write." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I convert my Markdown to HTML?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Two ways. Click \"Copy HTML\" to place the rendered markup on your clipboard for pasting into a CMS, email, or existing page. Or choose a theme and click \"Export HTML\" to download a complete standalone web page with embedded styling — Midnight, Paper, or Ocean — that you can open, share, or publish anywhere with no extra setup." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I paste HTML and get Markdown back?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Click \"Paste HTML → MD\" to convert HTML from your clipboard into clean Markdown, or simply paste copied web content directly into the editor — MarkForge detects HTML on the clipboard and converts headings, lists, links, bold and italic text, images, blockquotes, and code blocks automatically." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is YAML frontmatter and how does MarkForge handle it?",
+      "acceptedAnswer": { "@type": "Answer", "text": "YAML frontmatter is a metadata block at the top of a Markdown file, wrapped in lines of three dashes, containing key-value pairs like title, author, date, and tags. Static site generators and CMS importers read it to build pages. MarkForge parses the block automatically, displays it as a readable table in the frontmatter panel, and excludes it from the rendered preview and word count." }
+    }
+  ]
+}
+</script>
+
+<!-- ================= PURE LOGIC LIB (inlined at build time) ================= -->
+<script id="v3-markforge-markdown-studio-lib">
+/* MarkForge pure logic — Markdown studio engine.
+ * Pure functions only: no document/window access, no DOM, no network, no localStorage use.
+ * Compact Markdown parser (headings, bold/italic, links, images, lists, code,
+ * blockquote, hr) + linter (heading jumps, missing alt, broken anchors,
+ * duplicate headings) + YAML frontmatter + outline + reading time +
+ * HTML-to-Markdown conversion + themed standalone HTML export.
+ */
+var MarkForge = (function () {
+  'use strict';
+
+  /* ------------------------------ helpers ------------------------------ */
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function slugify(text) {
+    return String(text).toLowerCase()
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-');
+  }
+
+  function uniqueAnchor(base, seen) {
+    var a = base || 'section';
+    if (seen[a] === undefined) { seen[a] = 0; return a; }
+    seen[a] += 1;
+    return a + '-' + seen[a];
+  }
+
+  function isFence(line) { return /^\s*```/.test(line); }
+
+  /* --------------------------- inline rendering --------------------------- */
+
+  function renderInline(src) {
+    var s = String(src == null ? '' : src);
+    // Protect code spans with placeholders so no formatting leaks inside them.
+    var codes = [];
+    s = s.replace(/`([^`]+?)`/g, function (m, c) {
+      codes.push(c);
+      return 'MFCODE' + (codes.length - 1) + 'MF';
+    });
+    s = esc(s);
+    // Images: ![alt](url)
+    s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, function (m, alt, url) {
+      return '<img src="' + esc(url) + '" alt="' + alt + '"' + ' loading="lazy">';
+    });
+    // Links: [text](url) — neutralize javascript: URLs.
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, function (m, t, url) {
+      var u = /^javascript:/i.test(url) ? '#' : url;
+      return '<a href="' + esc(u) + '">' + t + '</a>';
+    });
+    // Bare URLs become links (href="..." is safe: '"' never matches the lookbehind class).
+    s = s.replace(/(^|[\s(>])(https?:\/\/[^\s<)"']+)/g, '$1<a href="$2">$2</a>');
+    // Emphasis
+    s = s.replace(/\*\*\*([^*]+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    s = s.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/__([^_]+?)__/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+    s = s.replace(/(^|[\s(])_([^_\s][^_]*?)_/g, '$1<em>$2</em>');
+    s = s.replace(/~~([^~]+?)~~/g, '<del>$1</del>');
+    // Restore code spans.
+    s = s.replace(/MFCODE(\d+)MF/g, function (m, i) {
+      return '<code>' + esc(codes[+i]) + '</code>';
+    });
+    return s;
+  }
+
+  /* --------------------------- block rendering --------------------------- */
+
+  function renderMarkdown(src) {
+    var lines = String(src == null ? '' : src).replace(/\r\n?/g, '\n').split('\n');
+    var html = [];
+    var para = [];
+    var list = null; // { ordered: bool, items: [String] }
+    var quote = [];
+    var inCode = false, codeLang = '', codeBuf = [];
+    var seen = {};
+
+    function flushPara() {
+      if (para.length) { html.push('<p>' + renderInline(para.join(' ')) + '</p>'); para = []; }
+    }
+    function flushList() {
+      if (!list) return;
+      var items = list.items.map(function (it) {
+        var t = it, cb = '';
+        var tm = t.match(/^\[([ xX])\]\s+(.*)$/);
+        if (tm) {
+          cb = '<input type="checkbox" disabled' + (tm[1].toLowerCase() === 'x' ? ' checked' : '') + '> ';
+          t = tm[2];
+        }
+        return '<li>' + cb + renderInline(t) + '</li>';
+      });
+      html.push((list.ordered ? '<ol>' : '<ul>') + items.join('') + (list.ordered ? '</ol>' : '</ul>'));
+      list = null;
+    }
+    function flushQuote() {
+      if (quote.length) { html.push('<blockquote>' + renderMarkdown(quote.join('\n')) + '</blockquote>'); quote = []; }
+    }
+
+    lines.forEach(function (raw) {
+      var line = raw;
+      var fence = line.match(/^\s*```(\S*)\s*$/);
+      if (fence) {
+        if (inCode) {
+          html.push('<pre><code' + (codeLang ? ' class="language-' + esc(codeLang) + '"' : '') + '>' +
+            esc(codeBuf.join('\n')) + '</code></pre>');
+          inCode = false; codeBuf = []; codeLang = '';
+        } else {
+          flushPara(); flushList(); flushQuote();
+          inCode = true; codeLang = fence[1] || ''; codeBuf = [];
+        }
+        return;
+      }
+      if (inCode) { codeBuf.push(line); return; }
+      if (/^\s*$/.test(line)) { flushPara(); flushList(); flushQuote(); return; }
+
+      var hm = line.match(/^(#{1,6})\s+(.*?)\s*$/);
+      if (hm) {
+        flushPara(); flushList(); flushQuote();
+        var lvl = hm[1].length;
+        var txt = hm[2].replace(/\s+#+\s*$/, '');
+        var anchor = uniqueAnchor(slugify(txt), seen);
+        html.push('<h' + lvl + ' id="' + anchor + '">' + renderInline(txt) + '</h' + lvl + '>');
+        return;
+      }
+      if (/^\s{0,3}(---|\*\*\*|___)\s*$/.test(line)) {
+        flushPara(); flushList(); flushQuote();
+        html.push('<hr>');
+        return;
+      }
+      var qm = line.match(/^\s*>\s?(.*)$/);
+      if (qm) { flushPara(); flushList(); quote.push(qm[1]); return; }
+
+      var ulm = line.match(/^\s*([-*+])\s+(.*)$/);
+      var olm = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
+      if (ulm || olm) {
+        flushPara(); flushQuote();
+        var ordered = !!olm;
+        var item = ulm ? ulm[2] : olm[2];
+        if (!list || list.ordered !== ordered) { flushList(); list = { ordered: ordered, items: [] }; }
+        list.items.push(item);
+        return;
+      }
+      if (list && /^\s{2,}\S/.test(line)) { // indented continuation of a list item
+        list.items[list.items.length - 1] += ' ' + line.trim();
+        return;
+      }
+      flushList(); flushQuote();
+      para.push(line.trim());
+    });
+
+    if (inCode) { html.push('<pre><code>' + esc(codeBuf.join('\n')) + '</code></pre>'); }
+    flushPara(); flushList(); flushQuote();
+    return html.join('\n');
+  }
+
+  /* ------------------------------ headings ------------------------------ */
+
+  function collectHeadings(src) {
+    var lines = String(src == null ? '' : src).replace(/\r\n?/g, '\n').split('\n');
+    var out = [];
+    var seen = {};
+    var inCode = false;
+    lines.forEach(function (line, idx) {
+      if (isFence(line)) { inCode = !inCode; return; }
+      if (inCode) return;
+      var hm = line.match(/^(#{1,6})\s+(.*?)\s*$/);
+      if (hm) {
+        var txt = hm[2].replace(/\s+#+\s*$/, '');
+        out.push({
+          level: hm[1].length,
+          text: txt,
+          line: idx + 1,
+          anchor: uniqueAnchor(slugify(txt), seen)
+        });
+      }
+    });
+    return out;
+  }
+
+  function extractOutline(src) {
+    return collectHeadings(src).map(function (h) {
+      return { level: h.level, text: h.text, anchor: h.anchor };
+    });
+  }
+
+  /* ------------------------------- linter ------------------------------- */
+
+  function lintMarkdown(src) {
+    var issues = [];
+    var fm = parseFrontmatter(src);
+    var lines = fm.body.replace(/\r\n?/g, '\n').split('\n');
+    var baseLine = fm.offset; // frontmatter lines consumed above the body
+    var inCode = false;
+    var lastLevel = 0;
+    var h1Count = 0;
+    var seenText = {};
+    var headings = collectHeadings(src);
+    var anchors = {};
+    headings.forEach(function (h) { anchors[h.anchor] = true; });
+
+    lines.forEach(function (line, idx) {
+      var lineNo = baseLine + idx + 1;
+      if (isFence(line)) { inCode = !inCode; return; }
+      if (inCode) return;
+
+      var hm = line.match(/^(#{1,6})\s+(.*?)\s*$/);
+      if (hm) {
+        var lvl = hm[1].length;
+        var txt = hm[2].replace(/\s+#+\s*$/, '').trim();
+        if (lastLevel > 0 && lvl > lastLevel + 1) {
+          issues.push({
+            line: lineNo, rule: 'heading-jump', severity: 'warning',
+            message: 'Heading jumps from H' + lastLevel + ' to H' + lvl + ' — skipped level(s) in between.'
+          });
+        }
+        lastLevel = lvl;
+        if (lvl === 1) {
+          h1Count++;
+          if (h1Count > 1) {
+            issues.push({
+              line: lineNo, rule: 'multiple-h1', severity: 'info',
+              message: 'More than one H1 found — most documents work best with a single top-level title.'
+            });
+          }
+        }
+        var norm = txt.toLowerCase();
+        if (seenText[norm] !== undefined) {
+          issues.push({
+            line: lineNo, rule: 'duplicate-heading', severity: 'warning',
+            message: 'Duplicate heading "' + txt + '" (first used at line ' + seenText[norm] + ').'
+          });
+        } else {
+          seenText[norm] = lineNo;
+        }
+      }
+
+      var imgRe = /!\[([^\]]*)\]\([^)]*\)/g, m;
+      while ((m = imgRe.exec(line)) !== null) {
+        if (!m[1].trim()) {
+          issues.push({
+            line: lineNo, rule: 'missing-alt', severity: 'warning',
+            message: 'Image is missing alt text — screen readers and SEO both need it.'
+          });
+        }
+      }
+
+      var aRe = /\[([^\]]*)\]\(#([^)\s]+)\)/g;
+      while ((m = aRe.exec(line)) !== null) {
+        var a = m[2].toLowerCase();
+        if (!anchors[a]) {
+          issues.push({
+            line: lineNo, rule: 'broken-anchor', severity: 'error',
+            message: 'Anchor link "#' + m[2] + '" has no matching heading in this document.'
+          });
+        }
+      }
+    });
+    return issues;
+  }
+
+  /* ---------------------------- frontmatter ---------------------------- */
+
+  function parseFrontmatter(src) {
+    var text = String(src == null ? '' : src).replace(/\r\n?/g, '\n');
+    var m = text.match(/^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/);
+    if (!m) return { present: false, data: {}, body: text, offset: 0 };
+    var data = {};
+    m[1].split('\n').forEach(function (ln) {
+      if (/^\s*$/.test(ln) || /^\s*#/.test(ln)) return;
+      var kv = ln.match(/^\s*([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+      if (!kv) return;
+      var v = kv[2].trim();
+      var q = v.match(/^(['"])([\s\S]*)\1$/);
+      if (q) {
+        data[kv[1]] = q[2];
+      } else if (/^\[.*\]$/.test(v)) {
+        data[kv[1]] = v.slice(1, -1).split(',').map(function (t) {
+          return t.trim().replace(/^(['"])([\s\S]*)\1$/, '$2');
+        }).filter(function (t) { return t !== ''; });
+      } else {
+        data[kv[1]] = v;
+      }
+    });
+    var offset = m[0].split('\n').length - 1;
+    return { present: true, data: data, body: text.slice(m[0].length), offset: offset };
+  }
+
+  /* ------------------------- stats / reading time ------------------------- */
+
+  function stripMarkdown(s) {
+    var t = String(s == null ? '' : s);
+    t = t.replace(/^---[ \t]*\n[\s\S]*?\n---[ \t]*(\n|$)/, ' '); // frontmatter
+    t = t.replace(/```[\s\S]*?```/g, ' ');                        // fenced code
+    t = t.replace(/`([^`]*)`/g, '$1');                            // code spans
+    t = t.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');                // images -> alt
+    t = t.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');                 // links -> text
+    t = t.replace(/<[^>]*>/g, ' ');                               // stray HTML
+    t = t.replace(/^[#>*-]+\s?/gm, ' ');                          // block markers
+    t = t.replace(/[*_~`#]/g, ' ');                               // inline markers
+    return t.replace(/\s+/g, ' ').trim();
+  }
+
+  function readingTime(src) {
+    var clean = stripMarkdown(src);
+    var words = clean ? clean.split(' ').length : 0;
+    return {
+      words: words,
+      chars: clean.length,
+      minutes: words === 0 ? 0 : Math.max(1, Math.ceil(words / 200))
+    };
+  }
+
+  /* ------------------------- HTML -> Markdown ------------------------- */
+
+  function decodeEntities(s) {
+    return String(s)
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&#(\d+);/g, function (m, n) { return String.fromCharCode(parseInt(n, 10)); });
+  }
+
+  function stripTags(s) { return String(s).replace(/<[^>]*>/g, ''); }
+
+  function inlineHtmlToMd(s) {
+    var t = String(s);
+    t = t.replace(/<img[^>]*>/gi, function (m) {
+      var src = (m.match(/src="([^"]*)"/i) || [])[1] || '';
+      var alt = (m.match(/alt="([^"]*)"/i) || [])[1] || '';
+      return '![' + alt + '](' + src + ')';
+    });
+    t = t.replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, function (m, href, txt) {
+      return '[' + stripTags(txt).trim() + '](' + href + ')';
+    });
+    t = t.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/(strong|b)>/gi, '**$2**');
+    t = t.replace(/<(em|i)[^>]*>([\s\S]*?)<\/(em|i)>/gi, '*$2*');
+    t = t.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, '`$1`');
+    t = t.replace(/<br\s*\/?>/gi, '\n');
+    t = stripTags(t);
+    return decodeEntities(t);
+  }
+
+  function htmlToMarkdown(html) {
+    var s = String(html == null ? '' : html).replace(/\r/g, '');
+    s = s.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, function (m, inner) {
+      var code = inner.replace(/<code[^>]*>([\s\S]*?)<\/code>/i, '$1');
+      return '\n```\n' + decodeEntities(stripTags(code)).replace(/^\n+|\s+$/g, '') + '\n```\n';
+    });
+    s = s.replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi, function (m, n, inner) {
+      var hashes = '', i;
+      for (i = 0; i < parseInt(n, 10); i++) hashes += '#';
+      return '\n' + hashes + ' ' + inlineHtmlToMd(inner).trim() + '\n';
+    });
+    s = s.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, function (m, inner) {
+      var body = inner.replace(/<p[^>]*>/gi, '').replace(/<\/p>/gi, '\n');
+      return '\n' + inlineHtmlToMd(body).split('\n').map(function (l) {
+        return '> ' + l.trim();
+      }).join('\n') + '\n';
+    });
+    s = s.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, function (m, inner) {
+      var i = 0;
+      return '\n' + inner.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, function (mm, li) {
+        i++;
+        return i + '. ' + inlineHtmlToMd(li).trim() + '\n';
+      }) + '\n';
+    });
+    s = s.replace(/<(ul|menu)[^>]*>([\s\S]*?)<\/(ul|menu)>/gi, function (m, tag, inner) {
+      return '\n' + inner.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, function (mm, li) {
+        return '- ' + inlineHtmlToMd(li).trim() + '\n';
+      }) + '\n';
+    });
+    s = s.replace(/<hr[^>]*>/gi, '\n---\n');
+    s = s.replace(/<p[^>]*>/gi, '\n\n');
+    s = s.replace(/<\/p>/gi, '\n');
+    s = inlineHtmlToMd(s);
+    s = s.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    return s;
+  }
+
+  /* ------------------------- themed HTML export ------------------------- */
+
+  var EXPORT_THEMES = {
+    midnight: { label: 'Midnight', bg: '#0d1526', fg: '#e2e8f0', muted: '#94a3b8', accent: '#4ade80', card: '#16213d', code: '#0a1120', border: '#233252' },
+    paper:    { label: 'Paper',    bg: '#ffffff', fg: '#1e293b', muted: '#64748b', accent: '#16a34a', card: '#f8fafc', code: '#f1f5f9', border: '#e2e8f0' },
+    ocean:    { label: 'Ocean',    bg: '#0c1a2e', fg: '#dbeafe', muted: '#93c5fd', accent: '#60a5fa', card: '#12294d', code: '#081426', border: '#1e3a5f' }
+  };
+
+  function exportHtml(title, bodyHtml, theme) {
+    var t = EXPORT_THEMES[theme] || EXPORT_THEMES.midnight;
+    var safeTitle = esc(title == null || String(title).trim() === '' ? 'MarkForge Export' : title);
+    var css = [
+      '*{box-sizing:border-box}',
+      'body{margin:0;background:' + t.bg + ';color:' + t.fg + ';font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.7}',
+      '.doc{max-width:760px;margin:0 auto;padding:48px 24px}',
+      '.doc-title{font-size:2.2rem;line-height:1.2;margin:0 0 8px;color:' + t.accent + '}',
+      '.doc-meta{color:' + t.muted + ';font-size:.85rem;margin-bottom:32px}',
+      'h2,h3,h4{margin:1.8em 0 .6em;line-height:1.3}',
+      'p{margin:0 0 1em}',
+      'a{color:' + t.accent + '}',
+      'code{background:' + t.code + ';padding:.15em .4em;border-radius:4px;font-size:.9em}',
+      'pre{background:' + t.code + ';padding:16px;border-radius:8px;overflow-x:auto;border:1px solid ' + t.border + '}',
+      'pre code{background:none;padding:0}',
+      'blockquote{border-left:4px solid ' + t.accent + ';margin:1em 0;padding:.5em 1em;background:' + t.card + ';border-radius:0 8px 8px 0}',
+      'ul,ol{padding-left:1.6em}',
+      'li{margin:.3em 0}',
+      'img{max-width:100%;border-radius:8px}',
+      'hr{border:none;border-top:1px solid ' + t.border + ';margin:2em 0}',
+      'table{border-collapse:collapse;width:100%;margin:1em 0}',
+      'th,td{border:1px solid ' + t.border + ';padding:8px 12px;text-align:left}'
+    ].join('\n');
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+      '<title>' + safeTitle + '</title>\n<style>\n' + css + '\n</style>\n</head>\n<body>\n' +
+      '<main class="doc">\n<h1 class="doc-title">' + safeTitle + '</h1>\n' +
+      '<div class="doc-meta">Exported with MarkForge Markdown Studio</div>\n' +
+      String(bodyHtml || '') + '\n</main>\n</body>\n</html>\n';
+  }
+
+  return {
+    esc: esc,
+    slugify: slugify,
+    stripMarkdown: stripMarkdown,
+    renderInline: renderInline,
+    renderMarkdown: renderMarkdown,
+    collectHeadings: collectHeadings,
+    extractOutline: extractOutline,
+    lintMarkdown: lintMarkdown,
+    parseFrontmatter: parseFrontmatter,
+    readingTime: readingTime,
+    htmlToMarkdown: htmlToMarkdown,
+    exportHtml: exportHtml,
+    EXPORT_THEMES: EXPORT_THEMES
+  };
+})();
+
+</script>
+
+<!-- ================= UI WIRING (DOM layer — not part of the pure lib) ================= -->
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+
+  var input = $('md-input'),
+      preview = $('md-preview'),
+      outlineList = $('outline-list'),
+      outlineCount = $('outline-count'),
+      lintList = $('lint-list'),
+      issuesBadge = $('issues-badge'),
+      fmPanel = $('frontmatter-panel'),
+      statWords = $('stat-words'),
+      statChars = $('stat-chars'),
+      statReading = $('stat-reading-time'),
+      statHeadings = $('stat-headings'),
+      statIssues = $('stat-issues'),
+      pasteHint = $('paste-hint');
+
+  var SAMPLE = [
+    '---',
+    'title: "Welcome to MarkForge"',
+    'author: "MarkForge Studio"',
+    'tags: [markdown, demo, writing]',
+    '---',
+    '',
+    '# Welcome to MarkForge',
+    '',
+    'MarkForge is a free **online markdown editor** — type on the left, watch the *live preview* on the right.',
+    '',
+    '### Jumping straight to H3',
+    '',
+    'Whoa — we skipped H2! The linter will flag this heading jump.',
+    '',
+    '## Formatting basics',
+    '',
+    '- **Bold**, *italic*, `inline code`, and ~~strikethrough~~',
+    '- [Links](https://example.com) and ![images with alt](https://example.com/cat.png)',
+    '- [x] Write the draft',
+    '- [ ] Fix the typos',
+    '',
+    '![A photo with no alt text](https://example.com/photo.png)',
+    '',
+    '## Duplicate section',
+    '',
+    'First occurrence of this heading.',
+    '',
+    '## Duplicate section',
+    '',
+    'Second occurrence — the linter flags duplicates too.',
+    '',
+    '> Tip: paste any HTML into the editor and MarkForge converts it to Markdown.',
+    '',
+    '[Jump to a missing section](#this-section-does-not-exist)',
+    '',
+    '[Jump to formatting basics](#formatting-basics)',
+    '',
+    '```js',
+    'console.log("hello, markdown");',
+    '```',
+    ''
+  ].join('\n');
+
+  var SEV_STYLE = {
+    error:   { row: 'lint-err',   dot: '#f87171', label: 'Error' },
+    warning: { row: 'lint-warn',  dot: '#fbbf24', label: 'Warning' },
+    info:    { row: 'lint-info',  dot: '#60a5fa', label: 'Info' }
+  };
+
+  function escHtml(s) { return MarkForge.esc(s); }
+
+  function renderOutline(headings) {
+    outlineCount.textContent = headings.length;
+    if (!headings.length) {
+      outlineList.innerHTML = '<p class="text-xs text-slate-500 px-1 py-2">No headings yet — add a <span class="font-mono"># heading</span> to build an outline.</p>';
+      return;
+    }
+    outlineList.innerHTML = headings.map(function (h) {
+      var pad = (h.level - 1) * 14;
+      return '<a href="#' + h.anchor + '" data-anchor="' + h.anchor + '" class="outline-link block truncate text-slate-300" style="padding-left:' + pad + 'px" title="' + escHtml(h.text) + '">' +
+        '<span class="font-mono text-[10px] text-slate-500 mr-1.5">H' + h.level + '</span>' + escHtml(h.text) + '</a>';
+    }).join('');
+  }
+
+  function renderLint(issues) {
+    var n = issues.length;
+    issuesBadge.textContent = n + (n === 1 ? ' issue' : ' issues');
+    issuesBadge.style.background = n ? 'rgba(248,113,113,.12)' : 'rgba(74,222,128,.12)';
+    issuesBadge.style.color = n ? '#f87171' : '#4ade80';
+    issuesBadge.style.borderColor = n ? 'rgba(248,113,113,.35)' : 'rgba(74,222,128,.35)';
+    if (!n) {
+      lintList.innerHTML = '<p class="text-xs text-slate-500 px-1 py-2 flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full" style="background:#4ade80"></span>Clean document — no issues found.</p>';
+      return;
+    }
+    lintList.innerHTML = issues.map(function (it) {
+      var st = SEV_STYLE[it.severity] || SEV_STYLE.info;
+      return '<div class="' + st.row + ' pl-2.5 py-1.5 pr-2 rounded-r-md bg-forge/60">' +
+        '<div class="flex items-center gap-2"><span class="inline-block w-1.5 h-1.5 rounded-full shrink-0" style="background:' + st.dot + '"></span>' +
+        '<span class="text-[10px] uppercase tracking-widest text-slate-500">' + st.label + ' · line ' + it.line + '</span></div>' +
+        '<p class="text-xs text-slate-300 mt-1 leading-relaxed">' + escHtml(it.message) + '</p>' +
+        '<p class="font-mono text-[10px] text-slate-500 mt-0.5">' + escHtml(it.rule) + '</p></div>';
+    }).join('');
+  }
+
+  function renderFrontmatter(fm) {
+    if (!fm.present) {
+      fmPanel.innerHTML = '<p class="text-xs text-slate-500 px-1 py-2">No frontmatter detected.<br>Add a <span class="font-mono">---</span> block at the top of your document to store title, author, tags…</p>';
+      return;
+    }
+    var keys = Object.keys(fm.data);
+    if (!keys.length) {
+      fmPanel.innerHTML = '<p class="text-xs text-slate-500 px-1 py-2">Frontmatter block found but empty.</p>';
+      return;
+    }
+    fmPanel.innerHTML = '<dl class="space-y-1.5">' + keys.map(function (k) {
+      var v = fm.data[k];
+      var vs = Array.isArray(v) ? v.join(', ') : String(v);
+      return '<div class="flex gap-2 text-xs"><dt class="font-mono text-accentx shrink-0 max-w-[40%] truncate" title="' + escHtml(k) + '">' + escHtml(k) + '</dt>' +
+        '<dd class="text-slate-300 break-words">' + escHtml(vs) + '</dd></div>';
+    }).join('') + '</dl>';
+  }
+
+  function update() {
+    var raw = input.value;
+    var fm = MarkForge.parseFrontmatter(raw);
+    var html = MarkForge.renderMarkdown(fm.body);
+    preview.innerHTML = html;
+    var issues = MarkForge.lintMarkdown(raw);
+    var headings = MarkForge.extractOutline(fm.body);
+    var rt = MarkForge.readingTime(raw);
+    renderOutline(headings);
+    renderLint(issues);
+    renderFrontmatter(fm);
+    statWords.textContent = rt.words;
+    statChars.textContent = rt.chars;
+    statReading.textContent = rt.minutes + (rt.minutes === 1 ? ' min' : ' min');
+    statHeadings.textContent = headings.length;
+    statIssues.textContent = issues.length;
+  }
+
+  var debounce = null;
+  input.addEventListener('input', function () {
+    clearTimeout(debounce);
+    debounce = setTimeout(update, 150);
+  });
+
+  // Outline click -> scroll preview to the heading.
+  outlineList.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[data-anchor]') : null;
+    if (!a) return;
+    e.preventDefault();
+    var target = preview.querySelector('#' + CSS.escape(a.getAttribute('data-anchor')));
+    if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  function downloadFile(name, content, mime) {
+    var blob = new Blob([content], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
+  function docTitle() {
+    var fm = MarkForge.parseFrontmatter(input.value);
+    if (fm.present && fm.data.title) return String(fm.data.title);
+    var hs = MarkForge.extractOutline(fm.body);
+    if (hs.length) return MarkForge.stripMarkdown(hs[0].text) || 'MarkForge Export';
+    return 'MarkForge Export';
+  }
+
+  function flash(btn, text) {
+    var old = btn.innerHTML;
+    btn.innerHTML = text;
+    setTimeout(function () { btn.innerHTML = old; }, 1400);
+  }
+
+  $('sample-btn').addEventListener('click', function () { input.value = SAMPLE; update(); input.focus(); });
+  $('clear-btn').addEventListener('click', function () { input.value = ''; update(); input.focus(); });
+
+  $('copy-html-btn').addEventListener('click', function () {
+    var btn = this, html = preview.innerHTML;
+    function done(ok) { flash(btn, ok ? 'Copied!' : 'Copy failed'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(html).then(function () { done(true); }, function () { done(false); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = html; document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      document.body.removeChild(ta); done(ok);
+    }
+  });
+
+  $('download-md-btn').addEventListener('click', function () {
+    var name = docTitle().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'document';
+    downloadFile(name + '.md', input.value, 'text/markdown');
+  });
+
+  $('export-btn').addEventListener('click', function () {
+    var theme = $('export-theme').value;
+    var out = MarkForge.exportHtml(docTitle(), preview.innerHTML, theme);
+    var name = docTitle().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'document';
+    downloadFile(name + '.html', out, 'text/html');
+    flash(this, 'Exported!');
+  });
+
+  function insertAtCursor(text) {
+    var start = input.selectionStart || 0, end = input.selectionEnd || 0;
+    var v = input.value;
+    input.value = v.slice(0, start) + text + v.slice(end);
+    input.selectionStart = input.selectionEnd = start + text.length;
+    input.focus();
+    update();
+  }
+
+  function showHint(msg) {
+    pasteHint.textContent = msg;
+    pasteHint.classList.remove('hidden');
+    setTimeout(function () { pasteHint.classList.add('hidden'); }, 5000);
+  }
+
+  // HTML -> Markdown conversion on paste: intercept rich HTML pastes.
+  input.addEventListener('paste', function (e) {
+    var cd = e.clipboardData;
+    if (!cd) return;
+    var html = cd.getData('text/html');
+    if (html && /<[a-z][^>]*>/i.test(html)) {
+      e.preventDefault();
+      insertAtCursor(MarkForge.htmlToMarkdown(html));
+      showHint('Converted pasted HTML to Markdown.');
+    }
+  });
+
+  $('paste-html-btn').addEventListener('click', function () {
+    if (!(navigator.clipboard && navigator.clipboard.readText)) {
+      showHint('Clipboard read is not available in this browser — try pasting directly into the editor instead.');
+      return;
+    }
+    navigator.clipboard.readText().then(function (text) {
+      if (!text) { showHint('Clipboard is empty.'); return; }
+      if (/<[a-z][^>]*>/i.test(text)) {
+        insertAtCursor(MarkForge.htmlToMarkdown(text));
+        showHint('Converted HTML from clipboard to Markdown.');
+      } else {
+        insertAtCursor(text);
+      }
+    }, function () {
+      showHint('Clipboard permission denied — paste directly into the editor instead; HTML pastes are converted automatically.');
+    });
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
